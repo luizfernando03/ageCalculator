@@ -1,6 +1,6 @@
 package com.study.agecalculator;
 
-public class Pessoa (String nome, int idade) {
+public record Pessoa(String nome, int idade) {
 
     @Override
     public String toString() {
