@@ -1,50 +1,61 @@
 package com.study.agecalculator;
 
-import java.time.LocalDate;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestApp {
 
-    private final int ANO_ATUAL;
+   PessoaFactory pessoaFactory = new PessoaFactory(2024);
+    @Test
+    public void deveCalcularIdadeCorretamente() {
+        String[] args = {"Jose:1990", "Maria:1980"};
+        String[] esperado = {"Jose:34", "Maria:44"};
 
-    public PessoaFactory() {
-        ANO_ATUAL = LocalDate.now().getYear();
+        String[] resultado = App.calcularIdades(args, pessoaFactory);
+
+        assertArrayEquals(esperado, resultado);
     }
 
-    public PessoaFactory(int ANO_ATUAL) {
-        this.ANO_ATUAL = ANO_ATUAL;
+    @Test
+    public void deveRetornarUmaStringVaziaQuandoListaDeEntradaEVazia() {
+        String[] args = {};
+        String[] esperado = {};
+
+        String[] resultado = App.calcularIdades(args, factory);
+
+        assertArrayEquals(esperado, resultado);
     }
 
-    public TestApp(int anoAtual) {
-        ANO_ATUAL = anoAtual;
+    public static Stream<Arguments> gerarEntradasInvalidas() {
+        return Stream.of(
+                arguments("Jose:2025", "Ano de nascimento não pode ser maior que o atual."),
+                arguments(":2020", "O nome não pode ser vazio."),
+                arguments("Jose:", "Cada linha da entrada deve seguir o formato nome:anoNascimento."),
+                arguments("Jose2020", "Cada linha da entrada deve seguir o formato nome:anoNascimento."),
+                arguments("", "Cada linha da entrada deve seguir o formato nome:anoNascimento.")
+        );
     }
 
-    public Pessoa[] criar(String[] args) {
-        Pessoa[] resposta = new Pessoa[args.length];
+    @ParameterizedTest
+    @MethodSource("gerarEntradasInvalidas")
+    public void deveGerarExcecaoQuandoIdadeMaiorQueAnoAtual(String entrada, String mensagemErro) {
+        String[] args = {entrada};
+        Exception exception = assertThrows(ValidacaoException.class, () -> App.calcularIdades(args, factory));
 
-        for (int i = 0; i < args.length; i++) {
-            String item = args[i];
+        assertEquals(mensagemErro, exception.getMessage());
+    }
 
-            String[] partes = item.split(":");
-
-            if(partes.length < 2) {
-                throw new ValidacaoException("Cada linha da entrada deve seguir o formato nome:anoNascimento.");
-            }
-
-            String nome = partes[0];
-            int idade = ANO_ATUAL - Integer.parseInt(partes[1]);
-
-            if(idade < 0) {
-                throw new ValidacaoException("Ano de nascimento não pode ser maior que o atual.");
-            }
-
-            if(nome.isBlank()) {
-                throw new ValidacaoException("O nome não pode ser vazio.");
-            }
-
-            resposta[i] = new Pessoa(partes[0], idade);
-        }
-
-        return resposta;
+    @Test
+    public void deveExecutarMainSemErros() {
+        String[] args = {"Jose:1990"};
+        assertDoesNotThrow(() -> App.main(args));
     }
 
 }
